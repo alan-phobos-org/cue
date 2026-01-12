@@ -4,7 +4,9 @@ import (
 	cryptoRand "crypto/rand"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
@@ -201,6 +203,11 @@ func (s *Store) Search(query string, limit int) ([]SearchResult, error) {
 		limit = 20
 	}
 
+	ftsQuery := buildFTSQuery(query)
+	if ftsQuery == "" {
+		return []SearchResult{}, nil
+	}
+
 	// FTS5 search with BM25 ranking
 	rows, err := s.db.Query(`
 		SELECT i.id, i.title, i.link, i.content, i.created_at, i.updated_at,
@@ -211,7 +218,7 @@ func (s *Store) Search(query string, limit int) ([]SearchResult, error) {
 		WHERE items_fts MATCH ?
 		ORDER BY rank
 		LIMIT ?
-	`, query, limit)
+	`, ftsQuery, limit)
 	if err != nil {
 		return nil, fmt.Errorf("search: %w", err)
 	}
@@ -243,6 +250,61 @@ func (s *Store) Search(query string, limit int) ([]SearchResult, error) {
 	}
 
 	return results, rows.Err()
+}
+
+// buildFTSQuery transforms user search input into a safe FTS5 query.
+// - Unquoted terms are OR'd together: "foo bar" → "foo" OR "bar"
+// - Quoted phrases are preserved: `"foo bar"` → "foo bar"
+// - All tokens are quoted to escape FTS5 special characters (*, ^, NEAR, etc.)
+// - Embedded quotes are escaped by doubling: `say "hi"` → "say" OR "hi"
+func buildFTSQuery(query string) string {
+	if strings.TrimSpace(query) == "" {
+		return ""
+	}
+
+	var tokens []string
+	var buf strings.Builder
+	inQuote := false
+
+	flush := func() {
+		if buf.Len() == 0 {
+			return
+		}
+		token := strings.TrimSpace(buf.String())
+		buf.Reset()
+		if token == "" {
+			return
+		}
+		token = strings.ReplaceAll(token, `"`, `""`)
+		tokens = append(tokens, `"`+token+`"`)
+	}
+
+	for _, r := range query {
+		switch {
+		case r == '"':
+			if inQuote {
+				flush()
+				inQuote = false
+			} else {
+				flush()
+				inQuote = true
+			}
+		case unicode.IsSpace(r):
+			if inQuote {
+				buf.WriteRune(r)
+			} else {
+				flush()
+			}
+		default:
+			buf.WriteRune(r)
+		}
+	}
+	flush()
+
+	if len(tokens) == 0 {
+		return ""
+	}
+	return strings.Join(tokens, " OR ")
 }
 
 func scanItem(row *sql.Row) (*Item, error) {

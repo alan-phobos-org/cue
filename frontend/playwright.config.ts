@@ -12,7 +12,8 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: `http://localhost:${port}`,
+    baseURL: `https://localhost:${port}`,
     trace: 'on-first-retry',
+    ignoreHTTPSErrors: true,
   },
 })

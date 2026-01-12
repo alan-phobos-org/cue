@@ -342,9 +342,19 @@ func TestSearchWithQuotes(t *testing.T) {
 
 	s.Create("Exact Match Test", "the quick brown fox jumps", nil)
 	s.Create("Partial Match", "quick ideas and brown thoughts", nil)
+	s.Create("Single Term", "just quick here", nil)
 
-	// FTS5 phrase search with quotes
-	results, err := s.Search(`"quick brown"`, 10)
+	// Unquoted terms should match either term
+	results, err := s.Search("quick brown", 10)
+	if err != nil {
+		t.Fatalf("Search: %v", err)
+	}
+	if len(results) != 3 {
+		t.Errorf("term search len = %d, want 3", len(results))
+	}
+
+	// Phrase search with quotes should be precise
+	results, err = s.Search(`"quick brown"`, 10)
 	if err != nil {
 		t.Fatalf("Search: %v", err)
 	}
@@ -469,5 +479,33 @@ func TestSearchDefaultLimit(t *testing.T) {
 	}
 	if len(results) != 1 {
 		t.Errorf("len = %d, want 1", len(results))
+	}
+}
+
+func TestBuildFTSQuery(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"empty", "", ""},
+		{"whitespace only", "   ", ""},
+		{"single term", "foo", `"foo"`},
+		{"two terms", "foo bar", `"foo" OR "bar"`},
+		{"multiple terms", "foo bar baz", `"foo" OR "bar" OR "baz"`},
+		{"quoted phrase", `"foo bar"`, `"foo bar"`},
+		{"mixed quoted and unquoted", `foo "bar baz"`, `"foo" OR "bar baz"`},
+		{"multiple quoted phrases", `"foo bar" "baz qux"`, `"foo bar" OR "baz qux"`},
+		{"unclosed quote", `foo "bar`, `"foo" OR "bar"`},
+		{"extra whitespace", "  foo   bar  ", `"foo" OR "bar"`},
+		{"whitespace in quotes", `"foo  bar"`, `"foo  bar"`},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := buildFTSQuery(tc.input)
+			if got != tc.want {
+				t.Errorf("buildFTSQuery(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
 	}
 }

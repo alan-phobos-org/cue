@@ -450,19 +450,18 @@ func TestIntegrationDeleteNonExistent(t *testing.T) {
 	}
 }
 
-func TestIntegrationInvalidFTS5Query(t *testing.T) {
+func TestIntegrationMalformedQueryHandled(t *testing.T) {
 	srv, cleanup := setupTestServer(t)
 	defer cleanup()
 
-	// Unbalanced quotes cause FTS5 syntax error - returns 500 since error
-	// message doesn't always contain "fts5" for all syntax errors
+	// Unbalanced quotes are now handled gracefully by buildFTSQuery
+	// (the unclosed quote is treated as a regular search term)
 	req := httptest.NewRequest("GET", "/api/search?q=\"unclosed", nil)
 	w := httptest.NewRecorder()
 	srv.ServeHTTP(w, req)
 
-	// Accept either 400 (if fts5 in error) or 500 (generic error)
-	if w.Code != http.StatusBadRequest && w.Code != http.StatusInternalServerError {
-		t.Errorf("status = %d, want 400 or 500", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("status = %d, want 200", w.Code)
 	}
 }
 
