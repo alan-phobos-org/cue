@@ -101,7 +101,7 @@ case "${1:-help}" in
         ;;
     test-frontend)
         echo "Running frontend tests..."
-        cd frontend && npm test
+        cd frontend && npm install && npm test
         ;;
     test-system)
         echo "Running system tests..."
