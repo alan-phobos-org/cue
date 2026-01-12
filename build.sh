@@ -16,7 +16,7 @@ Usage: $0 <target>
 Build Targets:
   build             Build frontend and backend (outputs to bin/cue)
   build-backend     Build Go backend only
-  build-frontend    Build React frontend only (outputs to frontend/dist/)
+  build-frontend    Build React frontend only (outputs to backend/cmd/cue/dist/)
 
 Test Targets:
   test              Run all fast tests (unit + integration + frontend)
@@ -49,7 +49,7 @@ Deployment Targets:
 
 Utility Targets:
   certs             Generate PKI (CA, server, client certificates)
-  clean             Remove build artifacts (bin/, dist/, frontend/dist/)
+  clean             Remove build artifacts (bin/, dist/, backend/cmd/cue/dist/)
   help              Show this help message
 
 EOF
@@ -62,15 +62,21 @@ case "${1:-help}" in
         ;;
     build)
         echo "Building cue $VERSION..."
-        cd frontend && npm install && npm run build
-        cd ../backend && go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue ./cmd/cue
+        $0 build-frontend
+        $0 build-backend
         ;;
     build-backend)
         echo "Building backend..."
+        # Ensure frontend dist exists for embed (built by build-frontend)
+        if [ ! -d backend/cmd/cue/dist ]; then
+            echo "ERROR: backend/cmd/cue/dist not found. Run '$0 build-frontend' first."
+            exit 1
+        fi
         cd backend && go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue ./cmd/cue
         ;;
     build-frontend)
         echo "Building frontend..."
+        # Vite outputs directly to backend/cmd/cue/dist (see vite.config.ts)
         cd frontend && npm install && npm run build
         ;;
     test)
@@ -235,7 +241,7 @@ case "${1:-help}" in
         # Note: FTS5 requires CGO. Cross-compilation needs appropriate C toolchain.
         # Native build (current platform)
         echo "  Building for $(go env GOOS)/$(go env GOARCH) (native)..."
-        cd backend && go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue ./cmd/cue && cd ..
+        $0 build-backend
         DIST_NAME="cue-${VERSION}-$(go env GOOS)-$(go env GOARCH)"
         tar -czf "dist/${DIST_NAME}.tar.gz" -C bin cue
         echo "  Created dist/${DIST_NAME}.tar.gz"
@@ -383,8 +389,8 @@ case "${1:-help}" in
         ;;
     clean)
         echo "Cleaning build artifacts..."
-        rm -rf bin/ dist/ frontend/dist/ backend/cue.db
-        echo "Cleaned: bin/, dist/, frontend/dist/, backend/cue.db"
+        rm -rf bin/ dist/ backend/cmd/cue/dist/ backend/cue.db
+        echo "Cleaned: bin/, dist/, backend/cmd/cue/dist/, backend/cue.db"
         ;;
     *)
         echo "Unknown target: ${1:-}"
