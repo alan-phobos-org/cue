@@ -87,10 +87,16 @@ case "${1:-help}" in
         ;;
     test-unit)
         echo "Running backend unit tests..."
+        # Create stub dist directory if it doesn't exist (for embed directive)
+        mkdir -p backend/cmd/cue/dist
+        [ -f backend/cmd/cue/dist/.gitkeep ] || touch backend/cmd/cue/dist/.gitkeep
         cd backend && go test -tags fts5 -v -short ./...
         ;;
     test-int)
         echo "Running backend integration tests..."
+        # Create stub dist directory if it doesn't exist (for embed directive)
+        mkdir -p backend/cmd/cue/dist
+        [ -f backend/cmd/cue/dist/.gitkeep ] || touch backend/cmd/cue/dist/.gitkeep
         cd backend && go test -tags fts5 -v -run Integration ./...
         ;;
     test-frontend)
