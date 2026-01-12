@@ -1,0 +1,27 @@
+# Build outputs
+bin/
+backend/cmd/cue/dist/
+
+# Database
+*.db
+
+# Certificates
+certs/
+
+# Dependencies
+frontend/node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# dist
+dist
