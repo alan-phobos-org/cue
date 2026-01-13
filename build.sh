@@ -72,7 +72,13 @@ case "${1:-help}" in
             echo "ERROR: backend/cmd/cue/dist not found. Run '$0 build-frontend' first."
             exit 1
         fi
-        cd backend && go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue ./cmd/cue
+        # Use musl for static linking on Linux when available (improves glibc compatibility)
+        if [ "$(go env GOOS)" = "linux" ] && command -v musl-gcc >/dev/null 2>&1; then
+            echo "Using musl-gcc for static linking..."
+            cd backend && CC=musl-gcc CGO_ENABLED=1 go build -tags fts5 -ldflags "$LDFLAGS -linkmode external -extldflags '-static'" -o ../bin/cue ./cmd/cue
+        else
+            cd backend && go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue ./cmd/cue
+        fi
         ;;
     build-frontend)
         echo "Building frontend..."

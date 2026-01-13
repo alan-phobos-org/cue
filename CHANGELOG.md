@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Linux release binaries now use static linking via musl for glibc compatibility
+- Release workflow installs musl-tools to enable static linking on Ubuntu runners
+
 ## [0.2.2] - 2026-01-13
 
 ### Added
