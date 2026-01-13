@@ -43,7 +43,90 @@ func (s *Store) Close() error {
 	return s.db.Close()
 }
 
+// Schema versioning
+
+type migration struct {
+	version int
+	name    string
+	up      func(db *sql.DB) error
+}
+
+var migrations = []migration{
+	{1, "initial_schema", migrateV1},
+}
+
 func migrate(db *sql.DB) error {
+	// Create schema_version table if it doesn't exist
+	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS schema_version (
+			version INTEGER PRIMARY KEY,
+			applied_at TEXT NOT NULL
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("create schema_version table: %w", err)
+	}
+
+	currentVersion, err := getCurrentVersion(db)
+	if err != nil {
+		return fmt.Errorf("get current version: %w", err)
+	}
+
+	// Handle existing unversioned databases: if tables exist but no version recorded
+	if currentVersion == 0 {
+		var tableCount int
+		err := db.QueryRow(`SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='items'`).Scan(&tableCount)
+		if err != nil {
+			return fmt.Errorf("check existing tables: %w", err)
+		}
+		if tableCount > 0 {
+			// Existing database without version tracking - mark as version 1
+			_, err = db.Exec(`INSERT INTO schema_version (version, applied_at) VALUES (1, ?)`,
+				time.Now().UTC().Format(time.RFC3339))
+			if err != nil {
+				return fmt.Errorf("mark existing schema version: %w", err)
+			}
+			currentVersion = 1
+		}
+	}
+
+	// Run pending migrations
+	for _, m := range migrations {
+		if m.version <= currentVersion {
+			continue
+		}
+		if err := runMigration(db, m); err != nil {
+			return fmt.Errorf("migration %d (%s): %w", m.version, m.name, err)
+		}
+	}
+
+	return nil
+}
+
+func getCurrentVersion(db *sql.DB) (int, error) {
+	var version int
+	err := db.QueryRow(`SELECT COALESCE(MAX(version), 0) FROM schema_version`).Scan(&version)
+	if err != nil {
+		return 0, err
+	}
+	return version, nil
+}
+
+func runMigration(db *sql.DB, m migration) error {
+	if err := m.up(db); err != nil {
+		return err
+	}
+
+	_, err := db.Exec(`INSERT INTO schema_version (version, applied_at) VALUES (?, ?)`,
+		m.version, time.Now().UTC().Format(time.RFC3339))
+	if err != nil {
+		return fmt.Errorf("record version: %w", err)
+	}
+
+	return nil
+}
+
+func migrateV1(db *sql.DB) error {
 	schema := `
 		CREATE TABLE IF NOT EXISTS items (
 			id TEXT PRIMARY KEY,
@@ -80,7 +163,6 @@ func migrate(db *sql.DB) error {
 			VALUES (NEW.rowid, NEW.title, NEW.content, NEW.link);
 		END;
 
-		-- Auth tables
 		CREATE TABLE IF NOT EXISTS tokens (
 			id TEXT PRIMARY KEY,
 			user_cn TEXT NOT NULL,

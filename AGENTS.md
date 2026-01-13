@@ -60,6 +60,7 @@ Web UI (TypeScript) → REST API (Go) → SQLite+FTS5
 - API-first design - all functionality via REST
 - Frontend embedded in Go binary for single-binary deployment
 - Versioning from git tags, exposed via `/api/status`
+- Database migrations: versioned in `store.go` (add new `migrateVN` functions to `migrations` slice)
 
 ---
 
