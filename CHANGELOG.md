@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-01-13
+
+### Fixed
+- CI workflow now creates stub dist directory for Go embed during tests
+- Frontend tests now install dependencies before running
+- Release workflow simplified to use build.sh dist
+
+### Changed
+- Distribution tarball now includes README, LICENSE, and CHANGELOG
+
 ## [0.2.0] - 2026-01-11
 
 ### Fixed
@@ -31,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build system with lint, test, dist, and deploy targets
 - PKI certificate generation for mTLS deployments
 
-[Unreleased]: https://github.com/alan-phobos-org/cue/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/alan-phobos-org/cue/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/alan-phobos-org/cue/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/alan-phobos-org/cue/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/alan-phobos-org/cue/releases/tag/v0.1.0

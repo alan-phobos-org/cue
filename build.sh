@@ -231,7 +231,16 @@ case "${1:-help}" in
         echo "Step 4/4: Packaging..."
         mkdir -p dist
         DIST_NAME="cue-${VERSION}-$(go env GOOS)-$(go env GOARCH)"
-        tar -czf "dist/${DIST_NAME}.tar.gz" -C bin cue
+        # Create staging directory with all release files
+        STAGING="dist/${DIST_NAME}"
+        mkdir -p "$STAGING"
+        cp bin/cue "$STAGING/"
+        cp README.md "$STAGING/" 2>/dev/null || true
+        cp LICENSE "$STAGING/" 2>/dev/null || true
+        cp CHANGELOG.md "$STAGING/" 2>/dev/null || true
+        # Create tarball and clean up staging
+        tar -czf "dist/${DIST_NAME}.tar.gz" -C dist "$DIST_NAME"
+        rm -rf "$STAGING"
         echo "Created dist/${DIST_NAME}.tar.gz"
         ;;
     dist-all)
