@@ -260,16 +260,25 @@ case "${1:-help}" in
         DIST_NAME="cue-${VERSION}-$(go env GOOS)-$(go env GOARCH)"
         tar -czf "dist/${DIST_NAME}.tar.gz" -C bin cue
         echo "  Created dist/${DIST_NAME}.tar.gz"
-        # Linux AMD64 (requires cross-compilation toolchain for CGO)
-        if command -v x86_64-linux-musl-gcc >/dev/null 2>&1; then
+        # Linux AMD64 (requires cross-compilation toolchain for CGO when not on Linux)
+        if [ "$(go env GOOS)" = "linux" ] && [ "$(go env GOARCH)" = "amd64" ]; then
+            echo "  linux/amd64 already built (native platform)"
+        elif command -v x86_64-linux-musl-gcc >/dev/null 2>&1; then
             echo "  Building for linux/amd64..."
             cd backend && CC=x86_64-linux-musl-gcc CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
                 go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue-linux-amd64 ./cmd/cue && cd ..
             tar -czf "dist/cue-${VERSION}-linux-amd64.tar.gz" -C bin cue-linux-amd64
             rm -f bin/cue-linux-amd64
             echo "  Created dist/cue-${VERSION}-linux-amd64.tar.gz"
+        elif command -v musl-gcc >/dev/null 2>&1; then
+            echo "  Building for linux/amd64..."
+            cd backend && CC=musl-gcc CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
+                go build -tags fts5 -ldflags "$LDFLAGS" -o ../bin/cue-linux-amd64 ./cmd/cue && cd ..
+            tar -czf "dist/cue-${VERSION}-linux-amd64.tar.gz" -C bin cue-linux-amd64
+            rm -f bin/cue-linux-amd64
+            echo "  Created dist/cue-${VERSION}-linux-amd64.tar.gz"
         else
-            echo "  Skipping linux/amd64 (no cross-compiler: install musl-cross for CGO support)"
+            echo "  Skipping linux/amd64 (no cross-compiler: install musl-tools or musl-cross)"
         fi
         echo "Distribution complete. Files in dist/"
         ls -la dist/
