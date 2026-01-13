@@ -2,6 +2,10 @@
 
 Instructions for AI coding agents working on this project.
 
+## Vision
+
+Solve the problem of "I know I wrote this down somewhere" across messy networks and scattered notes. Help teams rediscover misplaced knowledge and share accumulated expertise without overhead. Should feel as fast as grepping local files. Single-binary deployment is non-negotiable; complexity belongs in the build, not the user's environment. Must work on mobile for capturing things on the go.
+
 ## Project Overview
 Knowledge management tool with REST API backend (Go) and React frontend (TypeScript).
 Items have titles, optional primary links (URL or file path), and markdown content.
