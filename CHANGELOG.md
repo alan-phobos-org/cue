@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-01-14
+
 ### Fixed
 - Linux release binaries now use static linking via musl for glibc compatibility
 - Release workflow installs musl-tools to enable static linking on Ubuntu runners
@@ -55,7 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Build system with lint, test, dist, and deploy targets
 - PKI certificate generation for mTLS deployments
 
-[Unreleased]: https://github.com/alan-phobos-org/cue/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/alan-phobos-org/cue/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/alan-phobos-org/cue/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/alan-phobos-org/cue/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/alan-phobos-org/cue/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/alan-phobos-org/cue/compare/v0.1.0...v0.2.0
