@@ -252,6 +252,15 @@ function App() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [mode, saveItem])
 
+  // Cleanup autosave timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const displayedItems = searchResults
     ? searchResults.map(r => r.item)
     : items
