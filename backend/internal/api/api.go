@@ -327,6 +327,10 @@ func (s *Server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "invalid expires_in duration", http.StatusBadRequest)
 			return
 		}
+		if parsed <= 0 {
+			http.Error(w, "expires_in must be positive", http.StatusBadRequest)
+			return
+		}
 		ttl = parsed
 	}
 

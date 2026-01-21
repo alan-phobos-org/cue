@@ -192,7 +192,7 @@ function App() {
       setMode('preview')
     } catch (err) {
       console.error('Failed to save:', err)
-      alert('Failed to save: ' + err)
+      alert('Failed to save: ' + (err instanceof Error ? err.message : String(err)))
     } finally {
       setSaving(false)
     }
